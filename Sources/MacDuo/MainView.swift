@@ -2,10 +2,12 @@ import AppKit
 import SwiftUI
 
 private enum MainStyle {
-    static let background = Color(red: 0.075, green: 0.079, blue: 0.088)
-    static let surface = Color(red: 0.125, green: 0.13, blue: 0.145)
-    static let line = Color.white.opacity(0.09)
-    static let accent = Color(red: 0.72, green: 0.79, blue: 0.99)
+    static let background = Color(red: 0.055, green: 0.057, blue: 0.061)
+    static let line = Color.white.opacity(0.11)
+    static let primary = Color.white.opacity(0.92)
+    static let secondary = Color.white.opacity(0.52)
+    static let accent = Color(red: 0.82, green: 0.78, blue: 0.72)
+    static let ready = Color(red: 0.50, green: 0.72, blue: 0.56)
 }
 
 struct MainView: View {
@@ -16,62 +18,61 @@ struct MainView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-                .padding(.bottom, 28)
+                .padding(.bottom, 32)
+
+            Text("Экран следует\nза крышкой.")
+                .font(.system(size: 32, weight: .regular))
+                .tracking(-1.2)
+                .foregroundStyle(MainStyle.primary)
+
+            Text("Плавное складывание рабочего стола и экрана блокировки.")
+                .font(.system(size: 12.5))
+                .foregroundStyle(MainStyle.secondary)
+                .padding(.top, 10)
 
             status
-                .padding(.bottom, 24)
+                .padding(.top, 24)
+                .padding(.bottom, 25)
 
-            Text("ГДЕ ПОКАЗЫВАТЬ")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .tracking(1.5)
-                .foregroundStyle(.white.opacity(0.42))
-                .padding(.bottom, 10)
+            Text("Анимация")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(MainStyle.secondary)
+                .padding(.bottom, 9)
 
             VStack(spacing: 0) {
                 modeRow(
-                    symbol: "laptopcomputer",
                     title: "Рабочий стол",
-                    detail: "Изображение складывается вместе с крышкой",
+                    detail: "На встроенном экране MacBook",
                     isOn: Binding(
                         get: { model.isDesktopEffectRequested },
                         set: { model.setDesktopEffectRequested($0) }
                     )
                 )
 
-                MainStyle.line.frame(height: 1).padding(.leading, 56)
+                MainStyle.line.frame(height: 1)
 
                 modeRow(
-                    symbol: "lock.display",
                     title: "Экран блокировки",
-                    detail: "Складывает экран входа вслед за крышкой",
+                    detail: "Когда Mac запрашивает пароль",
                     isOn: Binding(
                         get: { model.isLockScreenEffectEnabled },
                         set: { model.setLockScreenEffectEnabled($0) }
                     )
                 )
             }
-            .background(MainStyle.surface, in: RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(MainStyle.line, lineWidth: 1)
-            }
+            .overlay(alignment: .top) { MainStyle.line.frame(height: 1) }
+            .overlay(alignment: .bottom) { MainStyle.line.frame(height: 1) }
 
             if model.isDesktopEffectRequested {
                 desktopAction
                     .padding(.top, 12)
             }
 
-            Spacer(minLength: 20)
-
-            HStack(spacing: 7) {
-                Image(systemName: "menubar.rectangle")
-                    .font(.system(size: 12))
-                Text("После закрытия окна MacDuo остаётся в строке меню")
-                    .font(.system(size: 11))
-            }
-            .foregroundStyle(.white.opacity(0.42))
+            Spacer(minLength: 0)
         }
-        .padding(26)
+        .padding(.horizontal, 28)
+        .padding(.top, 27)
+        .padding(.bottom, 25)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MainStyle.background)
         .preferredColorScheme(.dark)
@@ -82,20 +83,16 @@ struct MainView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 13) {
+        HStack(spacing: 10) {
             Image(nsImage: NSApplication.shared.applicationIconImage)
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 49, height: 49)
-                .clipShape(RoundedRectangle(cornerRadius: 13))
+                .frame(width: 30, height: 30)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("MacDuo")
-                    .font(.system(size: 21, weight: .semibold))
-                Text("Экран следует за крышкой")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.54))
-            }
+            Text("MacDuo")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(MainStyle.primary)
 
             Spacer()
 
@@ -103,63 +100,53 @@ struct MainView: View {
                 showsSettings = true
             } label: {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 16, weight: .medium))
-                    .frame(width: 34, height: 34)
+                    .font(.system(size: 15, weight: .regular))
+                    .frame(width: 30, height: 30)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .foregroundStyle(.white.opacity(0.72))
+            .foregroundStyle(MainStyle.secondary)
             .help("Настройки")
             .accessibilityLabel("Настройки")
         }
     }
 
     private var status: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 10) {
             Circle()
                 .fill(statusColor)
-                .frame(width: 8, height: 8)
-                .padding(.top, 5)
+                .frame(width: 6, height: 6)
+                .padding(.top, 6)
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(statusTitle)
-                    .font(.system(size: 15, weight: .semibold))
-                Text(statusDetail)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.57))
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(MainStyle.primary)
+                if !statusDetail.isEmpty {
+                    Text(statusDetail)
+                        .font(.system(size: 11))
+                        .foregroundStyle(MainStyle.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 17)
-        .padding(.vertical, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MainStyle.surface, in: RoundedRectangle(cornerRadius: 16))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(MainStyle.line, lineWidth: 1)
-        }
     }
 
     private func modeRow(
-        symbol: String,
         title: String,
         detail: String,
         isOn: Binding<Bool>
     ) -> some View {
-        HStack(spacing: 13) {
-            Image(systemName: symbol)
-                .font(.system(size: 19, weight: .light))
-                .foregroundStyle(MainStyle.accent)
-                .frame(width: 42, height: 42)
-                .background(.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 11))
-
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(MainStyle.primary)
                 Text(detail)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.48))
+                    .foregroundStyle(MainStyle.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -170,7 +157,6 @@ struct MainView: View {
                 .toggleStyle(.switch)
                 .accessibilityLabel(title)
         }
-        .padding(.horizontal, 16)
         .padding(.vertical, 15)
     }
 
@@ -224,7 +210,7 @@ struct MainView: View {
                 return "Разрешите захват экрана в macOS. Изображение остаётся на этом Mac."
             case .restartRequired: return "macOS применит доступ после нового запуска."
             case .starting: return "Подготовка живого изображения…"
-            case .idle: return "Захват включится, когда вы начнёте закрывать крышку."
+            case .idle: return model.sensorHasSample ? "" : "Ожидаем данные о положении крышки."
             case let .failed(message): return message
             case .running: break
             }
@@ -232,9 +218,7 @@ struct MainView: View {
         if !model.sensorHasSample && (model.isDesktopEffectRequested || model.isLockScreenEffectEnabled) {
             return "Ожидаем данные о положении крышки."
         }
-        if model.isDesktopEffectRequested || model.isLockScreenEffectEnabled {
-            return "Прикройте крышку — изображение последует за её движением."
-        }
+        if model.isDesktopEffectRequested || model.isLockScreenEffectEnabled { return "" }
         return "Выберите, где показывать анимацию складывания."
     }
 
@@ -243,59 +227,81 @@ struct MainView: View {
             switch model.captureState {
             case .permissionRequired, .restartRequired: return .orange
             case .failed: return .red
-            case .idle, .starting: return MainStyle.accent
+            case .idle: return model.sensorHasSample ? MainStyle.ready : MainStyle.accent
+            case .starting: return MainStyle.accent
             case .running: break
             }
         }
         if model.isDesktopEffectRequested || model.isLockScreenEffectEnabled {
-            return model.sensorHasSample ? .green : .orange
+            return model.sensorHasSample ? MainStyle.ready : .orange
         }
         return .white.opacity(0.35)
     }
 
     private var settingsSheet: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Настройки")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(MainStyle.primary)
                 Spacer()
                 Button("Готово") { showsSettings = false }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.plain)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(MainStyle.secondary)
             }
+            .padding(.bottom, 27)
 
-            VStack(alignment: .leading, spacing: 7) {
-                Toggle("Запускать MacDuo при входе в macOS", isOn: Binding(
+            HStack(spacing: 14) {
+                Text("Запускать при входе в macOS")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(MainStyle.primary)
+                Spacer()
+                Toggle("Запускать при входе в macOS", isOn: Binding(
                     get: { model.launchAtLoginEnabled },
                     set: { model.setLaunchAtLoginEnabled($0) }
                 ))
+                .labelsHidden()
                 .toggleStyle(.switch)
+            }
+            .padding(.bottom, model.launchAtLoginNeedsApproval
+                || model.launchAtLoginMessage.hasPrefix("Не удалось") ? 8 : 19)
+
+            if model.launchAtLoginNeedsApproval
+                || model.launchAtLoginMessage.hasPrefix("Не удалось") {
                 Text(model.launchAtLoginMessage)
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(MainStyle.secondary)
                 if model.launchAtLoginNeedsApproval {
                     Button("Разрешить в настройках macOS") { model.openLoginItemsSettings() }
                         .controlSize(.small)
                 }
+                Spacer().frame(height: 18)
             }
 
-            Divider()
+            MainStyle.line.frame(height: 1)
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Диагностика")
                         .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MainStyle.primary)
                     Text("Превью, датчик, калибровка и параметры эффекта")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(MainStyle.secondary)
                 }
                 Spacer()
                 Button("Открыть…") {
                     showsSettings = false
                     openWindow(id: "diagnostics")
                 }
+                .buttonStyle(.plain)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(MainStyle.accent)
             }
+            .padding(.top, 19)
         }
-        .padding(24)
+        .padding(28)
         .frame(width: 470)
         .fixedSize(horizontal: false, vertical: true)
         .background(MainStyle.background)

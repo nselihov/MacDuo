@@ -8,12 +8,12 @@ struct MacDuoApp: App {
         WindowGroup("MacDuo", id: "main") {
             MainView()
                 .environmentObject(model)
-                .frame(width: 520, height: 500)
+                .frame(width: 520, height: 460)
                 .task {
                     model.prepareOverlay()
                 }
         }
-        .defaultSize(width: 520, height: 500)
+        .defaultSize(width: 520, height: 460)
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
 
