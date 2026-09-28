@@ -2,12 +2,12 @@ import AppKit
 import SwiftUI
 
 private enum MainStyle {
-    static let background = Color(red: 0.055, green: 0.057, blue: 0.061)
-    static let line = Color.white.opacity(0.11)
-    static let primary = Color.white.opacity(0.92)
-    static let secondary = Color.white.opacity(0.52)
-    static let accent = Color(red: 0.82, green: 0.78, blue: 0.72)
-    static let ready = Color(red: 0.50, green: 0.72, blue: 0.56)
+    static let background = MacDuoTheme.background
+    static let line = MacDuoTheme.line
+    static let primary = MacDuoTheme.primary
+    static let secondary = MacDuoTheme.secondary
+    static let accent = MacDuoTheme.accent
+    static let ready = MacDuoTheme.ready
 }
 
 struct MainView: View {

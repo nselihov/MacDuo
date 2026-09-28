@@ -7,6 +7,7 @@ struct PreviewCanvas: View {
     let parameters: FoldParameters
     let tuning: EffectTuning
     let hasDesktopFrame: Bool
+    let showsArtwork: Bool
     let frameStore: DesktopFrameStore
 
     var body: some View {
@@ -33,7 +34,7 @@ struct PreviewCanvas: View {
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(.white.opacity(0.07), lineWidth: 1)
+                    .strokeBorder(MacDuoTheme.line, lineWidth: 1)
             }
         }
     }
@@ -68,10 +69,13 @@ struct PreviewCanvas: View {
             if hasDesktopFrame {
                 MetalFoldPreviewSurface(frameStore: frameStore,
                                         parameters: parameters, tuning: tuning)
-            } else {
+            } else if showsArtwork {
                 FoldPreviewSurface(frameStore: frameStore,
                                    parameters: parameters, tuning: tuning,
                                    hasDesktopFrame: false)
+            } else {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(MacDuoTheme.background)
             }
 
             if hasDesktopFrame {
@@ -79,7 +83,7 @@ struct PreviewCanvas: View {
                     HStack {
                         HStack(spacing: 6) {
                             Circle()
-                                .fill(Color.green)
+                                .fill(MacDuoTheme.ready)
                                 .frame(width: 6, height: 6)
                             Text("LIVE · BUILT-IN")
                         }
@@ -130,28 +134,28 @@ struct SpatialArtwork: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.08, green: 0.11, blue: 0.16),
-                    Color(red: 0.10, green: 0.16, blue: 0.22),
-                    Color(red: 0.035, green: 0.045, blue: 0.065),
+                    Color(red: 0.11, green: 0.11, blue: 0.12),
+                    Color(red: 0.16, green: 0.15, blue: 0.14),
+                    Color(red: 0.055, green: 0.055, blue: 0.06),
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
 
             Circle()
-                .fill(Color.blue.opacity(0.18))
+                .fill(MacDuoTheme.accent.opacity(0.12))
                 .frame(width: 280, height: 280)
                 .blur(radius: 60)
                 .offset(x: -130, y: -90)
 
             VStack(alignment: .leading, spacing: 22) {
                 HStack {
-                    Text("SPACE  /  01")
+                    Text("ЭКРАН  /  ПРЕВЬЮ")
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .tracking(1.2)
                         .foregroundStyle(.white.opacity(0.74))
                     Spacer()
-                    Text("FIXED PLANE")
+                    Text("MACDUO")
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.42))
                 }
@@ -182,10 +186,10 @@ struct SpatialArtwork: View {
 
     private func tileColor(for index: Int) -> Color {
         switch index % 4 {
-        case 0: Color.white.opacity(0.16)
-        case 1: Color.blue.opacity(0.42)
-        case 2: Color.white.opacity(0.09)
-        default: Color(red: 0.55, green: 0.68, blue: 0.78).opacity(0.34)
+        case 0: Color.white.opacity(0.14)
+        case 1: MacDuoTheme.accent.opacity(0.30)
+        case 2: Color.white.opacity(0.08)
+        default: Color.white.opacity(0.18)
         }
     }
 }

@@ -1,12 +1,12 @@
+import AppKit
 import MacDuoCore
 import SwiftUI
 
 private enum DuoStyle {
-    static let canvas = Color(red: 0.075, green: 0.085, blue: 0.105)
-    static let rail = Color(red: 0.105, green: 0.115, blue: 0.138)
-    static let surface = Color(red: 0.135, green: 0.147, blue: 0.173)
-    static let border = Color.white.opacity(0.075)
-    static let accent = Color(red: 0.46, green: 0.56, blue: 0.98)
+    static let canvas = MacDuoTheme.canvas
+    static let rail = MacDuoTheme.background
+    static let border = MacDuoTheme.line
+    static let accent = MacDuoTheme.accent
 }
 
 struct ContentView: View {
@@ -23,37 +23,40 @@ struct ContentView: View {
                     parameters: model.foldParameters,
                     tuning: model.effectTuning,
                     hasDesktopFrame: model.hasDesktopFrame,
+                    showsArtwork: model.source == .manual,
                     frameStore: model.desktopFrameStore
                 )
                 .overlay {
                     if !model.hasDesktopFrame && model.source == .sensor {
-                        VStack(spacing: 10) {
-                            FoldGlyph()
-                                .frame(width: 52, height: 52)
-                            Text("Ваш экран появится здесь")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.82))
-                            Text("Подключите рабочий стол в панели справа.")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.white.opacity(0.48))
+                        VStack(spacing: 8) {
+                            Text(model.wantsDesktopConnected
+                                 ? "Предпросмотр появится при движении крышки"
+                                 : "Включите рабочий стол")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(MacDuoTheme.primary)
+                            if !model.wantsDesktopConnected {
+                                Text("Переключатель находится в главном окне MacDuo.")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(MacDuoTheme.secondary)
+                            }
                         }
-                        .padding(20)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 13)
                     }
                 }
                 .overlay(alignment: .bottomLeading) {
                     HStack(alignment: .lastTextBaseline) {
-                        Text("ПРЕВЬЮ  /  ВСТРОЕННЫЙ ЭКРАН")
-                            .tracking(0.7)
+                        Text("Предпросмотр · встроенный экран")
                         Spacer()
                         Text("\(model.effectiveAngle, specifier: "%.0f")°")
-                            .font(.system(size: 18, weight: .medium, design: .monospaced))
+                            .font(.system(size: 16, weight: .medium, design: .monospaced))
                     }
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.53))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(MacDuoTheme.secondary)
                     .padding(.horizontal, 22)
                     .padding(.bottom, 18)
                 }
-                .padding(20)
+                .padding(22)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Rectangle()
@@ -61,7 +64,7 @@ struct ContentView: View {
                     .frame(width: 1)
 
                 ControlRail()
-                    .frame(width: 328)
+                    .frame(width: 320)
             }
         }
         .background(DuoStyle.canvas)
@@ -70,66 +73,38 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 12) {
-            FoldGlyph()
-                .frame(width: 34, height: 34)
+        HStack(alignment: .center, spacing: 10) {
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 30, height: 30)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Диагностика MacDuo")
-                    .font(.system(size: 19, weight: .semibold))
-                Text("Превью, датчик и тонкая настройка")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
+            Text("MacDuo")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(MacDuoTheme.primary)
+
+            Text("/ Диагностика")
+                .font(.system(size: 13))
+                .foregroundStyle(MacDuoTheme.secondary)
 
             Spacer()
 
             HStack(spacing: 7) {
                 Circle()
-                    .fill(model.sensorHasSample ? Color.green : Color.orange)
+                    .fill(model.sensorHasSample ? MacDuoTheme.ready : Color.orange)
                     .frame(width: 6, height: 6)
                 Text(model.sensorIndicatorText)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(MacDuoTheme.secondary)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(DuoStyle.surface, in: Capsule())
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 13)
+        .padding(.horizontal, 27)
+        .padding(.top, 25)
+        .padding(.bottom, 21)
         .background(DuoStyle.rail)
         .overlay(alignment: .bottom) {
             DuoStyle.border.frame(height: 1)
-        }
-    }
-}
-
-private struct FoldGlyph: View {
-    var body: some View {
-        GeometryReader { geometry in
-            let unit = geometry.size.width / 34
-            ZStack {
-                RoundedRectangle(cornerRadius: 9 * unit, style: .continuous)
-                    .fill(DuoStyle.surface)
-                Path { path in
-                    path.move(to: CGPoint(x: 6 * unit, y: 8 * unit))
-                    path.addLine(to: CGPoint(x: 16 * unit, y: 11 * unit))
-                    path.addLine(to: CGPoint(x: 16 * unit, y: 27 * unit))
-                    path.addLine(to: CGPoint(x: 6 * unit, y: 24 * unit))
-                    path.closeSubpath()
-                }
-                .fill(DuoStyle.accent)
-                Path { path in
-                    path.move(to: CGPoint(x: 18 * unit, y: 11 * unit))
-                    path.addLine(to: CGPoint(x: 28 * unit, y: 8 * unit))
-                    path.addLine(to: CGPoint(x: 28 * unit, y: 24 * unit))
-                    path.addLine(to: CGPoint(x: 18 * unit, y: 27 * unit))
-                    path.closeSubpath()
-                }
-                .fill(.white.opacity(0.8))
-            }
         }
     }
 }
@@ -140,50 +115,41 @@ private struct ControlRail: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("ПРОВЕРКА ЭФФЕКТА")
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                    .tracking(1.4)
-                    .foregroundStyle(.tertiary)
-                    .padding(.bottom, 2)
+            VStack(alignment: .leading, spacing: 0) {
                 desktopSection
                 lockScreenSection
-                startupSection
                 DisclosureGroup(isExpanded: $showsAdvanced) {
-                    VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 26) {
                         sourceSection
                         angleSection
                         effectTuningSection
                         calibrationSection
                         metricsSection
                     }
-                    .padding(.top, 18)
+                    .padding(.top, 21)
                 } label: {
-                    Text("Калибровка и настройка")
-                        .font(.system(size: 12, weight: .medium))
+                    Text("Калибровка и параметры")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MacDuoTheme.primary)
                 }
-                .padding(16)
-                .cardSurface()
-
-                Text("Изображение обрабатывается на Mac и никуда не отправляется.")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 3)
+                .padding(.vertical, 20)
+                .separatedSection()
             }
-            .padding(18)
+            .padding(.horizontal, 22)
+            .padding(.top, 24)
+            .padding(.bottom, 20)
         }
         .background(DuoStyle.rail)
     }
 
     private var desktopSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("01  /  РАБОЧИЙ СТОЛ")
+            sectionLabel("Рабочий стол")
 
             HStack(alignment: .top, spacing: 10) {
                 Circle()
                     .fill(captureStatusColor)
-                    .frame(width: 8, height: 8)
+                    .frame(width: 6, height: 6)
                     .padding(.top, 4)
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -191,7 +157,7 @@ private struct ControlRail: View {
                         .font(.system(size: 13, weight: .medium))
                     Text(captureStatusDetail)
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(MacDuoTheme.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -202,28 +168,30 @@ private struct ControlRail: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Эффект на экране MacBook")
                         .font(.system(size: 12, weight: .medium))
-                    Text(model.fullscreenEffectStatusText)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
+                    if !model.isFullscreenEffectEnabled {
+                        Text(model.fullscreenEffectStatusText)
+                            .font(.system(size: 10))
+                            .foregroundStyle(MacDuoTheme.muted)
+                    }
                 }
             }
             .toggleStyle(.switch)
             .disabled(!model.canToggleFullscreenEffect)
 
-            if !model.captureState.isRunning {
+            if !model.displayEnvironment.supportsFullscreenEffect {
                 Text(model.displayTopologyText)
                     .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(MacDuoTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(16)
-        .cardSurface()
+        .padding(.vertical, 20)
+        .separatedSection()
     }
 
     private var lockScreenSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("02  /  ЭКРАН БЛОКИРОВКИ")
+            sectionLabel("Экран блокировки")
             Toggle(isOn: Binding(
                 get: { model.isLockScreenEffectEnabled },
                 set: { model.setLockScreenEffectEnabled($0) }
@@ -237,46 +205,26 @@ private struct ControlRail: View {
                 }
             }
             .toggleStyle(.switch)
-            Text(model.lockScreenStatus)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if model.lockScreenStatus != "Живой локскрин + перспектива стекла",
+               model.lockScreenStatus != "Выключен" {
+                Text(model.lockScreenStatus)
+                    .font(.system(size: 11))
+                    .foregroundStyle(MacDuoTheme.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Button("Посмотреть анимацию") { model.previewLockScreenEffect() }
-                .controlSize(.small)
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(MacDuoTheme.accent)
                 .disabled(!model.isLockScreenEffectEnabled)
         }
-        .padding(16)
-        .cardSurface()
-    }
-
-    private var startupSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("03  /  ПРИ ВХОДЕ В MACOS")
-            Toggle(isOn: Binding(
-                get: { model.launchAtLoginEnabled },
-                set: { model.setLaunchAtLoginEnabled($0) }
-            )) {
-                Text("Запускать MacDuo")
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .toggleStyle(.switch)
-            Text(model.launchAtLoginMessage)
-                .font(.system(size: 10))
-                .foregroundStyle(model.launchAtLoginNeedsApproval ? Color.orange : Color.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if model.launchAtLoginNeedsApproval {
-                Button("Открыть настройки macOS") { model.openLoginItemsSettings() }
-                    .controlSize(.small)
-            }
-        }
-        .padding(16)
-        .cardSurface()
-        .onAppear { model.refreshLaunchAtLoginStatus() }
+        .padding(.vertical, 20)
+        .separatedSection()
     }
 
     private var sourceSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("ИСТОЧНИК ДВИЖЕНИЯ")
+            sectionLabel("Источник движения")
 
             Picker("Источник движения", selection: sourceBinding) {
                 ForEach(AppModel.MotionSource.allCases) { source in
@@ -284,6 +232,7 @@ private struct ControlRail: View {
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
 
             Text(model.sensorStatus)
                 .font(.system(size: 12))
@@ -295,7 +244,7 @@ private struct ControlRail: View {
     private var angleSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .lastTextBaseline) {
-                sectionLabel("УГОЛ КРЫШКИ")
+                sectionLabel("Угол крышки")
                 Spacer()
                 Text("\(model.effectiveAngle, specifier: "%.1f")°")
                     .font(.system(size: 25, weight: .medium, design: .monospaced))
@@ -317,7 +266,7 @@ private struct ControlRail: View {
 
     private var metricsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("ЧТО ПРОИСХОДИТ")
+            sectionLabel("Что происходит")
 
             metric("Складывание", value: model.foldParameters.progress, suffix: "%", multiplier: 100)
             metric("Размытие", value: model.hasDesktopFrame
@@ -331,7 +280,7 @@ private struct ControlRail: View {
 
     private var effectTuningSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionLabel("ТОНКАЯ НАСТРОЙКА ЭФФЕКТА")
+            sectionLabel("Параметры эффекта")
 
             Text("Общие настройки для рабочего стола и экрана блокировки. Сохраняйте удачную комбинацию.")
                 .font(.system(size: 11))
@@ -397,7 +346,7 @@ private struct ControlRail: View {
 
     private var calibrationSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("ТОЧКИ ЭФФЕКТА")
+            sectionLabel("Точки эффекта")
 
             Text("Поставьте крышку в нужное положение и запомните его как начало или финиш анимации.")
                 .font(.system(size: 11))
@@ -476,12 +425,16 @@ private struct ControlRail: View {
                 Button("Отменить автовосстановление") {
                     model.disconnectDesktop()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(MacDuoTheme.secondary)
             } else if model.wantsDesktopConnected {
                 Button("Отключить рабочий стол") {
                     model.disconnectDesktop()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(MacDuoTheme.secondary)
             } else {
                 Button("Подключить рабочий стол") {
                     model.connectDesktop()
@@ -505,7 +458,9 @@ private struct ControlRail: View {
             Button("Отключить рабочий стол") {
                 model.disconnectDesktop()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(MacDuoTheme.secondary)
 
         case .restartRequired:
             Text("Закройте MacDuo через ⌘Q и запустите снова — это нужно macOS только после первого разрешения.")
@@ -573,10 +528,10 @@ private struct ControlRail: View {
         }
 
         switch model.captureState {
-        case .idle: return model.wantsDesktopConnected ? .green : .blue
+        case .idle: return model.wantsDesktopConnected ? MacDuoTheme.ready : MacDuoTheme.muted
         case .permissionRequired, .restartRequired: return .orange
-        case .starting: return .blue
-        case .running: return .green
+        case .starting: return MacDuoTheme.accent
+        case .running: return MacDuoTheme.ready
         case .failed: return .red
         }
     }
@@ -645,19 +600,16 @@ private struct ControlRail: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-            .tracking(0.6)
-            .foregroundStyle(.tertiary)
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(MacDuoTheme.secondary)
     }
 }
 
 private extension View {
-    func cardSurface() -> some View {
+    func separatedSection() -> some View {
         frame(maxWidth: .infinity, alignment: .leading)
-            .background(DuoStyle.surface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(DuoStyle.border, lineWidth: 1)
+            .overlay(alignment: .bottom) {
+                DuoStyle.border.frame(height: 1)
             }
     }
 }
