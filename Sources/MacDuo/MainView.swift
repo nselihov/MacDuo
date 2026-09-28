@@ -84,7 +84,7 @@ struct MainView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
+            Image(nsImage: MacDuoIcon.image)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: 30, height: 30)

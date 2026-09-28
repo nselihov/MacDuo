@@ -1,8 +1,23 @@
+import AppKit
 import SwiftUI
+
+enum MacDuoIcon {
+    static let image: NSImage = {
+        guard let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+              let image = NSImage(contentsOf: url) else {
+            return NSApplication.shared.applicationIconImage
+        }
+        return image
+    }()
+}
 
 @main
 struct MacDuoApp: App {
     @StateObject private var model = AppModel()
+
+    init() {
+        NSApplication.shared.applicationIconImage = MacDuoIcon.image
+    }
 
     var body: some Scene {
         WindowGroup("MacDuo", id: "main") {
