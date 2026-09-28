@@ -1,0 +1,29 @@
+.DS_Store
+.build/
+.cache/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+*.xcuserdata/
+*.log
+*.mov
+*.mp4
+*.jpeg
+.env
+*.pem
+*.p12
+*.mobileprovision
+
+# Local builds and historical checkpoints are distributed as release assets,
+# not committed with the source tree.
+dist/
+releases/
+Resources/AppIcon.iconset/
+Resources/AppIcon-1024.png
+
+# Keep the public documentation focused; internal visual handoffs stay local.
+docs/*.md
+!docs/DEVELOPMENT.md
+!docs/DESIGN_DIRECTION.md
+!docs/LOCK_SCREEN_EXPERIMENT.md
+!docs/ROADMAP.md
