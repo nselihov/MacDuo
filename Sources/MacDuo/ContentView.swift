@@ -469,7 +469,7 @@ private struct ControlRail: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
 
-        case .idle, .failed:
+        case .idle:
             if model.wantsDesktopConnected,
                model.isSystemSuspended || !model.displayEnvironment.supportsFullscreenEffect
             {
@@ -477,13 +477,23 @@ private struct ControlRail: View {
                     model.disconnectDesktop()
                 }
                 .buttonStyle(.bordered)
+            } else if model.wantsDesktopConnected {
+                Button("Отключить рабочий стол") {
+                    model.disconnectDesktop()
+                }
+                .buttonStyle(.bordered)
             } else {
-                Button(model.wantsDesktopConnected ? "Повторить подключение" : "Подключить рабочий стол") {
+                Button("Подключить рабочий стол") {
                     model.connectDesktop()
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
             }
+
+        case .failed:
+            Button("Повторить подключение") { model.connectDesktop() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
 
         case .starting:
             Button("Подключаем…") {}
@@ -517,7 +527,7 @@ private struct ControlRail: View {
         }
 
         switch model.captureState {
-        case .idle: return "Готов к подключению"
+        case .idle: return model.wantsDesktopConnected ? "Готов к движению крышки" : "Готов к подключению"
         case .permissionRequired: return "Нужно разрешение macOS"
         case .starting: return "Подключаем встроенный экран"
         case let .running(displayName): return displayName + " подключён"
@@ -539,7 +549,9 @@ private struct ControlRail: View {
 
         switch model.captureState {
         case .idle:
-            return "Захват начнётся только после нажатия кнопки."
+            return model.wantsDesktopConnected
+                ? "Захват начнётся при закрытии крышки и остановится после открытия."
+                : "Захват начнётся только после нажатия кнопки."
         case .permissionRequired:
             return "Нужен доступ к изображению встроенного экрана, чтобы складывать рабочий стол. Кадры остаются на этом Mac."
         case .starting:
@@ -561,7 +573,7 @@ private struct ControlRail: View {
         }
 
         switch model.captureState {
-        case .idle: return .blue
+        case .idle: return model.wantsDesktopConnected ? .green : .blue
         case .permissionRequired, .restartRequired: return .orange
         case .starting: return .blue
         case .running: return .green

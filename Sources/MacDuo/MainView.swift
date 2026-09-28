@@ -204,7 +204,7 @@ struct MainView: View {
             case .starting: return "Подключаем экран"
             case .failed: return "Не удалось подключить экран"
             case .running: return model.sensorHasSample ? "Всё готово" : "Ждём датчик крышки"
-            case .idle: return "Подключаем экран"
+            case .idle: return model.sensorHasSample ? "Всё готово" : "Ждём датчик крышки"
             }
         }
         if model.isLockScreenEffectEnabled {
@@ -223,7 +223,8 @@ struct MainView: View {
             case .permissionRequired:
                 return "Разрешите захват экрана в macOS. Изображение остаётся на этом Mac."
             case .restartRequired: return "macOS применит доступ после нового запуска."
-            case .starting, .idle: return "Подготовка живого изображения…"
+            case .starting: return "Подготовка живого изображения…"
+            case .idle: return "Захват включится, когда вы начнёте закрывать крышку."
             case let .failed(message): return message
             case .running: break
             }

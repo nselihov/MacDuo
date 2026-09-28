@@ -58,6 +58,9 @@ final class AppModel: ObservableObject {
     private var overlayController: OverlayController?
     private var lockScreenOverlay: LockScreenOverlayController?
     private var overlayMotionActive = false
+    private var captureActivity = DesktopCaptureActivityGate()
+    private var captureRequested = false
+    private var captureStopTask: Task<Void, Never>?
     private var rawSensorAngle = 120.0
     private var renderSensorAngle = 120.0
     private var renderVelocity = 0.0
@@ -135,6 +138,11 @@ final class AppModel: ObservableObject {
             }
 
             self.lockScreenOverlay?.receive(angle: angle)
+            let needsDesktopFrame = self.captureActivity.receive(
+                angle: angle, velocity: velocity,
+                at: ProcessInfo.processInfo.systemUptime,
+                openAngle: self.openAngle)
+            self.reconcileCaptureDemand(sensorRequestsCapture: needsDesktopFrame)
             if firstSample {
                 // The pre-sleep angle is not a valid starting point after wake.
                 self.motionInterpolator.snap(to: angle)
@@ -225,7 +233,7 @@ final class AppModel: ObservableObject {
         !isSystemSuspended
             && isUserSessionActive
             && displayEnvironment.supportsFullscreenEffect
-            && hasDesktopFrame
+            && wantsDesktopConnected
     }
 
     var fullscreenEffectStatusText: String {
@@ -243,7 +251,9 @@ final class AppModel: ObservableObject {
             return "Временно выключен при зеркалировании, чтобы внешний монитор остался без эффекта."
         }
         if !hasDesktopFrame {
-            return "Подключите рабочий стол для анимации складывания."
+            return captureState == .idle
+                ? "Готов к движению крышки — захват начнётся при закрытии."
+                : "Подключите рабочий стол для анимации складывания."
         }
         return "Живой экран складывается в перспективе; блюр усиливается от шарнира к краю."
     }
@@ -261,7 +271,7 @@ final class AppModel: ObservableObject {
         if displayEnvironment.isMirrored {
             return "Обнаружено зеркалирование: эффект отключён на обоих экранах до возврата расширенного режима."
         }
-        return "Захватывается только Built-in Retina Display. Внешний монитор остаётся обычным рабочим экраном."
+        return "При движении крышки захватывается только Built-in Retina Display. Внешний монитор остаётся обычным рабочим экраном."
     }
 
     func setEffectTuning(_ newValue: EffectTuning) {
@@ -301,6 +311,7 @@ final class AppModel: ObservableObject {
         if newSource == .sensor {
             motionInterpolator.snap(to: rawSensorAngle)
         }
+        reconcileCaptureDemand(sensorRequestsCapture: captureActivity.wantsCapture)
         updateOverlayVisibility()
     }
 
@@ -425,10 +436,15 @@ final class AppModel: ObservableObject {
     func previewLockScreenEffect() { lockScreenOverlay?.preview() }
 
     func connectDesktop() {
+        if case .failed = captureState {
+            // A completed recovery keeps its demand flag set. Explicit retry
+            // must clear it so the next request can start a fresh stream.
+            captureRequested = false
+        }
         wantsDesktopConnected = true
         UserDefaults.standard.set(true, forKey: Self.desktopConnectionKey)
         refreshDisplayEnvironment()
-        scheduleCaptureRecovery(initialDelayNanoseconds: 0)
+        reconcileCaptureDemand(sensorRequestsCapture: captureActivity.wantsCapture)
     }
 
     var isDesktopEffectRequested: Bool {
@@ -447,12 +463,13 @@ final class AppModel: ObservableObject {
 
     func disconnectDesktop() {
         wantsDesktopConnected = false
+        captureRequested = false
         UserDefaults.standard.set(false, forKey: Self.desktopConnectionKey)
         recoveryTask?.cancel()
         displayChangeTask?.cancel()
         updateOverlayVisibility()
 
-        Task {
+        captureStopTask = Task {
             await captureService.stop()
         }
     }
@@ -542,6 +559,22 @@ final class AppModel: ObservableObject {
         overlayController?.setVisible(overlayMotionActive)
     }
 
+    private func reconcileCaptureDemand(sensorRequestsCapture: Bool) {
+        guard wantsDesktopConnected, !isSystemSuspended, isUserSessionActive,
+              displayEnvironment.supportsFullscreenEffect else { return }
+
+        let needsFrame = source == .manual || sensorRequestsCapture
+        if needsFrame {
+            if !captureRequested {
+                scheduleCaptureRecovery(initialDelayNanoseconds: 0)
+            }
+        } else if captureRequested {
+            captureRequested = false
+            recoveryTask?.cancel()
+            captureStopTask = Task { await captureService.stop() }
+        }
+    }
+
     private func observeSystemLifecycle() {
         let workspaceCenter = NSWorkspace.shared.notificationCenter
 
@@ -611,6 +644,8 @@ final class AppModel: ObservableObject {
 
     private func handleWillSleep() {
         isSystemSuspended = true
+        captureRequested = false
+        captureActivity.reset()
         recoveryTask?.cancel()
         displayChangeTask?.cancel()
         sensorRecoveryTask?.cancel()
@@ -625,7 +660,7 @@ final class AppModel: ObservableObject {
         overlayController?.hide()
 
         guard wantsDesktopConnected else { return }
-        Task {
+        captureStopTask = Task {
             await captureService.stop()
         }
     }
@@ -658,6 +693,8 @@ final class AppModel: ObservableObject {
 
     private func handleSessionDidResignActive() {
         isUserSessionActive = false
+        captureRequested = false
+        captureActivity.reset()
         recoveryTask?.cancel()
         displayChangeTask?.cancel()
         hasDesktopFrame = false
@@ -665,7 +702,7 @@ final class AppModel: ObservableObject {
         overlayController?.hide()
 
         guard wantsDesktopConnected else { return }
-        Task {
+        captureStopTask = Task {
             await captureService.stop()
         }
     }
@@ -766,14 +803,20 @@ final class AppModel: ObservableObject {
         initialDelayNanoseconds: UInt64,
         restartBeforeStarting: Bool = false
     ) {
+        captureRequested = true
+        captureActivity.forceCapture()
         recoveryTask?.cancel()
 
         recoveryTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            if let captureStopTask = self.captureStopTask {
+                await captureStopTask.value
+            }
             if initialDelayNanoseconds > 0 {
                 try? await Task.sleep(nanoseconds: initialDelayNanoseconds)
             }
 
-            guard let self, !Task.isCancelled else { return }
+            guard !Task.isCancelled, self.captureRequested else { return }
 
             if restartBeforeStarting {
                 await self.captureService.stop()
@@ -782,6 +825,7 @@ final class AppModel: ObservableObject {
 
             for attempt in 0 ..< 3 {
                 guard self.wantsDesktopConnected,
+                      self.captureRequested,
                       !self.isSystemSuspended,
                       self.isUserSessionActive,
                       !Task.isCancelled

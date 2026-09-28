@@ -54,6 +54,41 @@ do {
     try expect(FoldMotionModel.shouldPresentOverlay(for: meaningfulMovement), "Оверлей должен появляться после заметного движения крышки")
     try expect(meaningfulMovement.blurRadius > 0, "Размытие должно начинаться после выхода из мёртвой зоны")
 
+    var captureActivity = DesktopCaptureActivityGate()
+    try expect(!captureActivity.receive(angle: 120, velocity: 0, at: 0, openAngle: 115),
+               "При неподвижной открытой крышке захват не нужен")
+    try expect(!captureActivity.receive(angle: 119, velocity: -1, at: 0.1, openAngle: 115),
+               "Небольшой шум датчика не должен запускать захват")
+    try expect(captureActivity.receive(angle: 118, velocity: -12, at: 0.2, openAngle: 115),
+               "Захват должен начинаться до видимого складывания")
+    try expect(!FoldMotionModel.shouldPresentOverlay(
+        for: FoldMotionModel.parameters(angle: 118, velocity: -12)),
+        "При запуске захвата настоящий экран ещё должен быть виден")
+    try expect(captureActivity.receive(angle: 70, velocity: 0, at: 1, openAngle: 115),
+               "На частично закрытой крышке захват остаётся активным")
+    try expect(captureActivity.receive(angle: 120, velocity: 0, at: 2, openAngle: 115),
+               "У открытой крышки захват ждёт завершения анимации")
+    try expect(captureActivity.receive(angle: 120, velocity: 0, at: 3.4, openAngle: 115),
+               "До окончания паузы захват не останавливается")
+    try expect(!captureActivity.receive(angle: 120, velocity: 0, at: 3.6, openAngle: 115),
+               "После паузы у открытой крышки захват останавливается")
+    try expect(captureActivity.receive(angle: 118, velocity: -12, at: 3.7, openAngle: 115),
+               "Новое закрытие должно снова запускать захват")
+    captureActivity.reset()
+    captureActivity.forceCapture()
+    try expect(captureActivity.wantsCapture,
+               "Восстановление после сна может заранее подготовить захват")
+    try expect(captureActivity.receive(angle: 112, velocity: 0, at: 10, openAngle: 105),
+               "После пробуждения захват ждёт устойчивого открытого положения")
+    try expect(captureActivity.receive(angle: 111, velocity: -10, at: 10.7, openAngle: 105),
+               "Новое движение прерывает ожидание остановки захвата")
+    try expect(captureActivity.receive(angle: 112, velocity: 0, at: 10.8, openAngle: 105),
+               "После движения отсчёт устойчивого открытия начинается заново")
+    try expect(captureActivity.receive(angle: 112, velocity: 0, at: 12.1, openAngle: 105),
+               "Захват не должен остановиться по старому таймеру")
+    try expect(!captureActivity.receive(angle: 112, velocity: 0, at: 12.4, openAngle: 105),
+               "Захват останавливается после новой полной паузы")
+
     let calibratedOpen = FoldMotionModel.parameters(angle: 112, velocity: 0, openAngle: 112, closedAngle: 34)
     let calibratedClosed = FoldMotionModel.parameters(angle: 34, velocity: 0, openAngle: 112, closedAngle: 34)
     try expect(approximatelyEqual(calibratedOpen.progress, 0), "Калиброванная точка открытия должна давать progress = 0")
