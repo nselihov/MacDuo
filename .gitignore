@@ -25,5 +25,4 @@ Resources/AppIcon-1024.png
 docs/*.md
 !docs/DEVELOPMENT.md
 !docs/DESIGN_DIRECTION.md
-!docs/LOCK_SCREEN_EXPERIMENT.md
 !docs/ROADMAP.md

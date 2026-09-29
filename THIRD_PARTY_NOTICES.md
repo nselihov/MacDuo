@@ -11,17 +11,17 @@ The HID matching strategy and feature-report format used by `LidAngleSensor.swif
 
 No audio assets or interface code from that project are included in MacDuo.
 
-## SkyLightWindow — experimental lock-screen probe
+## SkyLightWindow
 
 The private SkyLight space-creation and window-delegation sequence in
 `Sources/MacDuoSkyLight/SkyLightBridge.swift` is adapted from
 [SkyLightWindow](https://github.com/Lakr233/SkyLightWindow), Copyright (c) 2025
 Lakr Aream, under the MIT License. MacDuo adds symbol checks, error handling,
-cleanup, passive windows, and a bounded diagnostic lifecycle.
+cleanup, and passive windows.
 
 The complete notice is in `Resources/Licenses/SkyLightWindow.txt` and is included
-in both application bundles. The main app uses this bridge to present the
-desktop Metal window and the separate lock-screen experiment.
+in the MacDuo application bundle. The bridge presents the desktop Metal window
+and the lock-screen backdrop.
 
 ## Private Core Animation runtime references
 

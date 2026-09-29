@@ -13,15 +13,9 @@ let package = Package(
         .executable(name: "MacDuoChecks", targets: ["MacDuoChecks"]),
         .executable(name: "MacDuoSensorCheck", targets: ["MacDuoSensorCheck"]),
         .executable(name: "MacDuoDisplayCheck", targets: ["MacDuoDisplayCheck"]),
-        .executable(name: "MacDuoLockScreenProbe", targets: ["MacDuoLockScreenProbe"]),
     ],
     targets: [
         .target(name: "MacDuoSkyLight", linkerSettings: [.linkedFramework("AppKit")]),
-        .executableTarget(
-            name: "MacDuoLockScreenProbe",
-            dependencies: ["MacDuoSkyLight"],
-            linkerSettings: [.linkedFramework("AppKit"), .linkedFramework("QuartzCore")]
-        ),
         .target(
             name: "MacDuoCore"
         ),
