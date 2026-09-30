@@ -9,10 +9,8 @@ DMG_PATH="$DIST_DIR/MacDuo-preview.dmg"
 STAGING_DIR="$(mktemp -d /private/tmp/macduo-package.XXXXXX)"
 trap 'rm -rf "$STAGING_DIR"' EXIT
 
-if [[ ! -d "$APP_PATH" ]]; then
-    echo "Сначала соберите приложение: ./scripts/build-app.sh" >&2
-    exit 1
-fi
+"$PROJECT_DIR/scripts/make-app-icon.sh"
+"$PROJECT_DIR/scripts/build-app.sh"
 
 codesign --verify --strict "$APP_PATH"
 

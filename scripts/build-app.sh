@@ -38,4 +38,7 @@ codesign \
     --requirements '=designated => identifier "com.nikolay.macduo"' \
     "$APP_PATH"
 
+# Launch Services uses the bundle directory date when refreshing its icon cache.
+touch "$APP_PATH"
+
 echo "$APP_PATH"
