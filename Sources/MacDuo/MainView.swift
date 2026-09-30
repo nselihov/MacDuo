@@ -13,6 +13,7 @@ private enum MainStyle {
 struct MainView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     @State private var showsSettings = false
 
     var body: some View {
@@ -108,6 +109,19 @@ struct MainView: View {
             .foregroundStyle(MainStyle.secondary)
             .help("Настройки")
             .accessibilityLabel("Настройки")
+
+            Button {
+                dismissWindow(id: "main")
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 30, height: 30)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(MainStyle.secondary)
+            .help("Закрыть окно. MacDuo останется в строке меню")
+            .accessibilityLabel("Закрыть окно")
         }
     }
 
